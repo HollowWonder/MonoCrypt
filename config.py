@@ -1,4 +1,5 @@
 import logging
+import logging.config
 
 from pathlib import Path
 
@@ -28,47 +29,37 @@ class Project:
             'tmp': str(self.tmp_dir)
         }
 
-def setup_logger(file_path: str,
-                log_name: str = "",
-                file_name: str = "app",
-                file_log_level: int = logging.DEBUG,
-                console_log_level: int = logging.INFO,
-                maxBytes: float = 1024*1024*5,
-                backupCount: int = 3) -> logging.Logger:
-    """ setup logger and getting it """
-    
-    for lib in ['httpx', 'httpcore']:
-        logging.getLogger(lib).setLevel(logging.WARNING)
-    
-    try:
-        log_name = log_name if log_name else file_name
-        logger = logging.getLogger(log_name)
-        logger.setLevel(logging.DEBUG)
-        
-        if logger.handlers:
-            logger.handlers.clear()
-        
-        log_filename = f"{file_path}/{file_name}.log"
-        file_handler = logging.handlers.RotatingFileHandler(
-            log_filename, 
-            maxBytes=maxBytes, 
-            backupCount=backupCount
-        )
-        file_handler.setLevel(file_log_level)
-        file_handler.setFormatter(logging.Formatter(
-            '[%(asctime)s - %(name)s - %(levelname)s]: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        ))
-        
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(console_log_level)
-        console_handler.setFormatter(logging.Formatter(
-            '[%(levelname)s]: %(message)s'
-        ))
-        
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
-        
-        return logger
-    except Exception as e:
-        raise Exception(f"error in setting logs: {e}")
+""" configuration for logs """
+
+LOGGING_CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'bot_formatter': {
+            'format': '[%(asctime)s - %(name)s - %(levelname)s] [%(user_id)s - %(username)s]: %(message)s',
+            'datafmt': '%Y-%m-%d %H:%M:%S',
+            'defaults': {'user_id': '---', 'username': '---'}
+        },
+        'default_formatter': {
+            'format': '[%(asctime)s - %(name)s - %(levelname)s]: %(message)s',
+            'datafmt': '%Y-%m-%d %H:%M:%S'
+        }
+    },
+    'handlers': {
+        'bot_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'bot_formatter',
+            'level': 'DEBUG',
+            'filename': "logs/bot.log",
+            'maxBytes': 5*1024*1024,
+            'backupCount': 5,
+            'encoding': 'utf-8'
+        }
+    },
+    'loggers': {
+        'bot': {
+            'handlers': ['bot_file'],
+            'level': 'DEBUG'
+        }
+    }
+}
