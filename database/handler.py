@@ -92,7 +92,6 @@ async def get_user_data(conn: psycopg.AsyncConnection, uid: int) -> dict[str, st
     async with conn.cursor() as cursor:
         await cursor.execute("select * from profiles where id = %s", (uid,))
         data = await cursor.fetchone()
-    print(data)
     return {
         'bybit_api': data[2],
         'bybit_secret_key': data[3]

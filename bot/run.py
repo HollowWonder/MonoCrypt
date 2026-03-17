@@ -53,7 +53,6 @@ async def main() -> None:
         dp.update.outer_middleware(mds.Logger())
         dp.update.outer_middleware(mds.Scheduler(scheduler))
         dp.update.outer_middleware(mds.Connection(conn))
-        dp.update.outer_middleware(mds.ByBit())
 
         dp.include_router(router)
         await dp.start_polling(bot)
