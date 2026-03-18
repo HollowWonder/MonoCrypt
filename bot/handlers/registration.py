@@ -11,8 +11,6 @@ from pybit.unified_trading import HTTP
 
 from database.handler import get_user_data, add_user, check_user, change_userdata
 
-from bot.utils.bot_manager import get_bybit_session
-
 router: Router = Router()
 
 @router.message(Command('start'))
@@ -37,9 +35,8 @@ async def start(message: Message, conn: AsyncConnection, logger: logging.Logger)
         "/set_bybit_keys - установить новые ключи\n"
         "/profile - посмотреть информацию о портфеле\n\n"
         "/mono - запустить мониторинг крипты\n"
-        "ПРИМЕР: /mono BTCUSDT interval 60 - запускает мониторинг крипты BTC с интервалом в 1 минуту"
+        "ПРИМЕР: /mono BTCUSDT spot interval 60 - запускает мониторинг крипты BTC с интервалом в 1 минуту"
     )
-    logger.debug('message is sending')
     await message.answer(text)
 
 
@@ -88,6 +85,7 @@ async def set_bybit_secret_key(message: Message, state: FSMContext, conn: AsyncC
         await state.clear()
 
 async def autocheck(conn: AsyncConnection, uid: int, username: str) -> None:
+    """ cheching user in database or not """
     check: bool = await check_user(conn, uid)
     if check:
         return None
