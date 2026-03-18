@@ -63,3 +63,8 @@ LOGGING_CONFIG = {
         }
     }
 }
+
+def set_loggers(paths: dict[str, str]) -> None:
+    """ setting logs"""
+    LOGGING_CONFIG['handlers']['bot_file']['filename'] = f"{paths.get('logs')}/bot.log"
+    logging.config.dictConfig(LOGGING_CONFIG)

@@ -23,4 +23,12 @@ async def get_bybit_session(conn: AsyncConnection, uid: int) -> None:
     )
     return session
 
-async def send_monitoring()
+async def send_monitoring(chat_id: int, category: str, crypto: str) -> None:
+    try:
+        bybit_session = HTTP(testnet=False)
+        ticket = bybit_session.get_tickers(category=category, symbol=crypto)
+        price = ticket['result']['list'][0]['lastPrice']
+        text = f"{crypto} - {price}"
+        await send_message(chat_id=chat_id, text=text)
+    except Exception as e:
+        await send_message(chat_id=chat_id, text=f"Error: {e}")

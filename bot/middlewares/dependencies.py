@@ -15,8 +15,18 @@ class Logger(BaseMiddleware):
     async def __call__(self, handler: Callable,
                 event: TelegramObject,
                 data: Any) -> Any:
-        Logger: logging.Logger = logging.getLogger('bot')
-        data['logger'] = Logger
+        base_logger: logging.Logger = logging.getLogger('bot')
+        
+        extra = {'user_id': '---', 'username': '---'}
+        if hasattr(event, "message"):
+            extra = {
+                'user_id': event.message.from_user.id,
+                'username': event.message.from_user.username
+            }
+
+        logger = logging.LoggerAdapter(base_logger, extra=extra)
+
+        data['logger'] = logger
         return await handler(event, data)
 
 class Connection(BaseMiddleware):
@@ -27,9 +37,6 @@ class Connection(BaseMiddleware):
     async def __call__(self, handler: Callable,
                 event: TelegramObject,
                 data: Any) -> Any:
-        logger: logging.Logger = logging.getLogger('bot')
-        logger.debug('connection with database')
-
         data['conn'] = self.conn
         return await handler(event, data)
 
@@ -42,8 +49,4 @@ class Scheduler(BaseMiddleware):
                 event: TelegramObject,
                 data: Any) -> Any:
         data['scheduler'] = self.scheduler
-
-        logger: logging.Logger = logging.getLogger('bot')
-        logger.debug("got scheduler")
-
         return await handler(event, data)

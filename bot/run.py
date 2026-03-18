@@ -14,18 +14,33 @@ from dotenv import load_dotenv
 
 from bot.utils.bot_manager import set_bot
 from bot.handlers import router
-from bot.utils.dependencies import set_loggers, get_scheduler
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.executors.asyncio import AsyncIOExecutor
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from database.handler import db_init
-from config import Project
+from config import Project, set_loggers
 
 load_dotenv()
 
 BOT_API: str = os.getenv('BOT_API')
 DATABASE_URL: str = os.getenv("DATABASE_URL")
 REDIS_URL: str = os.getenv("REDIS_URL")
+
+def get_scheduler(DATABASE_URL: str) -> AsyncIOScheduler:
+    """ creating scheduler for tasks"""
+    executors = {
+        'default': AsyncIOExecutor()
+    }
+    jobstores = {
+        'default': SQLAlchemyJobStore(url=DATABASE_URL)
+    }
+    return AsyncIOScheduler(
+        jobstores=jobstores,
+        executors=executors,
+        timezone="Europe/Moscow"
+    )
 
 async def main() -> None:
     project: Project = Project()
