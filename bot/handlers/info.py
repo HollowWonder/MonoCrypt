@@ -24,12 +24,12 @@ async def get_jobs_list(message: Message, conn: AsyncConnection, logger: Logger,
     logger.debug('user request for list of jobs')
     uid: str = str(message.from_user.id)
     text: str = (
-        "---Список активов задействованных в мониторинге---\n"
+        "---Список активов задействованных в мониторинге---\n\n"
         )
     jobs: list = scheduler.get_jobs()
 
     for job in jobs:
         if job.id.startswith(f"{uid}_"):
-            text += str(job.id.split("_")[1]) + "\n"
+            text += str(job.id.split("_")[1]) + " | " + str(job.trigger)
     
     await message.answer(text)
