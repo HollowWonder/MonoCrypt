@@ -26,17 +26,11 @@ async def start(message: Message, conn: AsyncConnection, logger: logging.Logger)
     has_keys = api_key not in (None, 'none', 'None')
     
     text = (
-        f"Статус аккаунта\n"
-        f"ID: {uid}\n"
-        f"BYBIT - ключи: {'✅' if has_keys else '❌'}\n\n"
+        f"**Добро пожаловать!**\n\n"
+        f"┌ **Ваш ID:** `{uid}`\n"
+        f"└ **Bybit ключи:** {'✅ установлены' if has_keys else '❌ не установлены'}\n\n"
     )
-    text += (
-        "Доступные команды:\n"
-        "/set_bybit_keys - установить новые ключи\n"
-        "/profile - посмотреть информацию о портфеле\n\n"
-        "/mono - запустить мониторинг крипты\n"
-        "ПРИМЕР: /mono BTCUSDT spot interval 60 - запускает мониторинг крипты BTC с интервалом в 1 минуту"
-    )
+    text += "!!!ОЗНАКОМЬТЕСЬ С КОМАНДАМИ: /help"
     await message.answer(text)
 
 

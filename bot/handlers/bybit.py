@@ -7,7 +7,7 @@ from aiogram.types import Message
 from aiogram.filters import Command, CommandObject
 
 from bot.utils.bybit_manager import send_monitoring
-from datetime import date
+from datetime import datetime
 
 router: Router = Router()
 @router.message(Command('resume'))
@@ -97,7 +97,16 @@ async def check_crypto(message: Message, conn: AsyncConnection, scheduler: Async
             job_params['minute'] = data_args[1]
         elif len(data_args) == 3:
             job_params['trigger'] = 'date'
-            job_params['run_date'] = date(*list(map(int, data_args[::-1])))
+            date_list:list = list(map(int, data_args[::-1]))
+            if len(args) >= 4:
+                time_parts = list(map(int, args[3].split(':')))
+                run_date = datetime(*date_list, time_parts[0], time_parts[1])
+            else:
+                run_date = datetime(*date_list, 0, 0)
+            job_params['run_date'] = run_date
+        else:
+            await message.answer("Неверный формат. Используйте `15:30` или `19:03:2026`")
+            return None
         
         scheduler.add_job(
             send_monitoring,

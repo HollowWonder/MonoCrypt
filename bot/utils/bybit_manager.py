@@ -32,12 +32,14 @@ async def send_monitoring(chat_id: int, category: str, crypto: str) -> None:
 
 async def get_bybit_profile(conn: AsyncConnection, uid: int) -> str:
     bybit_session: HTTP = await get_bybit_session(conn=conn, uid=uid)
-    text: str = "---Профиль ByBit"
+    text: str = "**Профиль ByBit**"
     
     if bybit_session is None:
-        return text + " - соединение отсутствует. Проверьте ключи---"
+        return text + ("**Bybit не подключен**\n\n"
+            "Установите API ключи:\n"
+            "`/set_bybit_keys`")
 
-    text += "---\n\n"
+    text += "\n\n"
     balance = bybit_session.get_wallet_balance(accountType="UNIFIED")
     account_info = balance['result']['list'][0]
 
@@ -45,12 +47,12 @@ async def get_bybit_profile(conn: AsyncConnection, uid: int) -> str:
     total_equity: str = float(account_info['totalEquity'])
     
     text += (
-        "--Общие сведения--\n"
-        f"Баланс кошелька: {total_wallet_balance}\n"
-        f"Цена всех активов: {total_equity}\n\n"
+        "**Bybit портфель**\n\n"
+        f"**Баланс кошелька:** `{total_wallet_balance}`\n"
+        f"**Общая стоимость:** `{total_equity}`\n\n"
+        "**Активы (количество | стоимость в usd)**\n"
         )
     coins = account_info['coin']
-    text += "--Активы (количество | стоимость в usd)--\n"
     for coin in coins:
         coin_name = coin['coin']
         usd_value = coin['usdValue']
