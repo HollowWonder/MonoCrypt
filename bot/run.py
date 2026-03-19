@@ -7,9 +7,7 @@ import logging
 import bot.middlewares.dependencies as mds
 
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.client.session.aiohttp import AiohttpSession
-from redis.asyncio import Redis
 
 from dotenv import load_dotenv
 
@@ -28,7 +26,6 @@ load_dotenv()
 PROXY_URL: str = os.getenv('PROXY')
 BOT_API: str = os.getenv('BOT_API')
 DATABASE_URL: str = os.getenv("DATABASE_URL")
-REDIS_URL: str = os.getenv("REDIS_URL")
 
 def get_scheduler(DATABASE_URL: str) -> AsyncIOScheduler:
     """ creating scheduler for tasks"""
@@ -58,16 +55,13 @@ async def main() -> None:
     dp = None
     
     try:
-        redis_client: Redis = Redis.from_url(REDIS_URL)
-        storage: RedisStorage = RedisStorage(redis_client)
-
         await db_init(conn=conn)
 
         session: AiohttpSession = AiohttpSession(proxy=PROXY_URL)
         
         bot: Bot = Bot(token=BOT_API, session=session)
         set_bot(bot)
-        dp: Dispatcher = Dispatcher(storage=storage)
+        dp: Dispatcher = Dispatcher()
 
         dp.update.outer_middleware(mds.Logger())
         dp.update.outer_middleware(mds.Scheduler(scheduler))
