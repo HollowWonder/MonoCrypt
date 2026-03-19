@@ -8,6 +8,7 @@ import bot.middlewares.dependencies as mds
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.client.session.aiohttp import AiohttpSession
 from redis.asyncio import Redis
 
 from dotenv import load_dotenv
@@ -24,6 +25,7 @@ from config import Project, set_loggers
 
 load_dotenv()
 
+PROXY_URL: str = os.getenv('PROXY')
 BOT_API: str = os.getenv('BOT_API')
 DATABASE_URL: str = os.getenv("DATABASE_URL")
 REDIS_URL: str = os.getenv("REDIS_URL")
@@ -61,7 +63,9 @@ async def main() -> None:
 
         await db_init(conn=conn)
 
-        bot: Bot = Bot(token=BOT_API)
+        session: AiohttpSession = AiohttpSession(proxy=PROXY_URL)
+        
+        bot: Bot = Bot(token=BOT_API, session=session)
         set_bot(bot)
         dp: Dispatcher = Dispatcher(storage=storage)
 
