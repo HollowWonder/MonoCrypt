@@ -10,6 +10,7 @@ from psycopg import AsyncConnection
 from pybit.unified_trading import HTTP
 
 from database.handler import get_user_data, add_user, check_user, change_userdata
+from cache import set_cache_data, get_cache_data, delete_cache
 
 router: Router = Router()
 
@@ -18,19 +19,27 @@ async def start(message: Message, conn: AsyncConnection, logger: logging.Logger)
     " getting user status "
     logger.debug("used command command /start")
 
-    uid = message.from_user.id
-    await autocheck(conn, uid, username= message.from_user.username)
-    user_data = await get_user_data(conn, uid)
-    
-    api_key = user_data.get('bybit_api')
-    has_keys = api_key not in (None, 'none', 'None')
-    
-    text = (
-        f"**Добро пожаловать!**\n\n"
-        f"┌ **Ваш ID:** `{uid}`\n"
-        f"└ **Bybit ключи:** {'✅ установлены' if has_keys else '❌ не установлены'}\n\n"
-    )
-    text += "!!!ОЗНАКОМЬТЕСЬ С КОМАНДАМИ: /help"
+    uid: int = message.from_user.id
+    cid: str = f"status:{uid}"
+
+    text: str = await get_cache_data(cid)
+
+    if text is None:
+        await autocheck(conn, uid, username= message.from_user.username)
+        user_data = await get_user_data(conn, uid)
+        
+        api_key = user_data.get('bybit_api')
+        has_keys = api_key not in (None, 'none', 'None')
+        
+        text = (
+            f"**Добро пожаловать!**\n\n"
+            f"┌ **Ваш ID:** `{uid}`\n"
+            f"└ **Bybit ключи:** {'✅ установлены' if has_keys else '❌ не установлены'}\n\n"
+        )
+        text += "!!!ОЗНАКОМЬТЕСЬ С КОМАНДАМИ: /help"
+
+        await set_cache_data(cid, data = text, es = 60*60*24)
+
     await message.answer(text)
 
 
@@ -40,6 +49,9 @@ class Regist(StatesGroup):
 
 @router.message(Command('set_bybit_keys'))
 async def set_bybit_api(message: Message, state: FSMContext, logger: logging.Logger) -> None:
+    cid: str = f"status:{message.from_user.id}"
+    await delete_cache(cid)
+
     logger.debug("user entering bybit api key")
     await state.set_state(Regist.waiting_for_api)
     await message.answer('Отправьте ваш API ключ Bybit')

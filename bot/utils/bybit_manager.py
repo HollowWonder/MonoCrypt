@@ -31,32 +31,35 @@ async def send_monitoring(chat_id: int, category: str, crypto: str) -> None:
         await send_message(chat_id=chat_id, text=f"Error: {e}")
 
 async def get_bybit_profile(conn: AsyncConnection, uid: int) -> str:
-    bybit_session: HTTP = await get_bybit_session(conn=conn, uid=uid)
-    text: str = "**Профиль ByBit**"
+    try:
+        bybit_session: HTTP = await get_bybit_session(conn=conn, uid=uid)
+        text: str = "**Профиль ByBit**"
+        
+        if bybit_session is None:
+            return text + ("**Bybit не подключен**\n\n"
+                "Установите API ключи:\n"
+                "`/set_bybit_keys`")
+
+        text += "\n\n"
+        balance = bybit_session.get_wallet_balance(accountType="UNIFIED")
+        account_info = balance['result']['list'][0]
+
+        total_wallet_balance: str = float(account_info['totalWalletBalance'])
+        total_equity: str = float(account_info['totalEquity'])
+        
+        text += (
+            "**Bybit портфель**\n\n"
+            f"**Баланс кошелька:** `{total_wallet_balance}`\n"
+            f"**Общая стоимость:** `{total_equity}`\n\n"
+            "**Активы (количество | стоимость в usd)**\n"
+            )
+        coins = account_info['coin']
+        for coin in coins:
+            coin_name = coin['coin']
+            usd_value = coin['usdValue']
+            count = coin['walletBalance']
+            text += f"{coin_name}: {count} | {usd_value}\n"
+    except Exception as e:
+        text = "Для просмотра профиля требуется ввести ключи"
     
-    if bybit_session is None:
-        return text + ("**Bybit не подключен**\n\n"
-            "Установите API ключи:\n"
-            "`/set_bybit_keys`")
-
-    text += "\n\n"
-    balance = bybit_session.get_wallet_balance(accountType="UNIFIED")
-    account_info = balance['result']['list'][0]
-
-    total_wallet_balance: str = float(account_info['totalWalletBalance'])
-    total_equity: str = float(account_info['totalEquity'])
-    
-    text += (
-        "**Bybit портфель**\n\n"
-        f"**Баланс кошелька:** `{total_wallet_balance}`\n"
-        f"**Общая стоимость:** `{total_equity}`\n\n"
-        "**Активы (количество | стоимость в usd)**\n"
-        )
-    coins = account_info['coin']
-    for coin in coins:
-        coin_name = coin['coin']
-        usd_value = coin['usdValue']
-        count = coin['walletBalance']
-        text += f"{coin_name}: {count} | {usd_value}\n"
-
     return text

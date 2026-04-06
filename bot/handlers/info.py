@@ -7,6 +7,7 @@ from psycopg import AsyncConnection
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bot.utils.bybit_manager import get_bybit_profile
+from cache import get_cache_data, set_cache_data
 
 router: Router = Router()
 
@@ -15,29 +16,53 @@ async def get_profile(message: Message, conn: AsyncConnection, logger: Logger) -
     """ getting profile """
     logger.debug('request for a profile')
     uid: int = message.from_user.id
-    text: str = await get_bybit_profile(conn, uid)
+    cid: str = f"profile:{uid}"
+
+    text: str = await get_cache_data(cid)
+    if text is None:
+        text = await get_bybit_profile(conn, uid)
+        await set_cache_data(cid, data=text, es=60)
+
     await message.answer(text=text, parse_mode='Markdown')
 
 @router.message(Command('list'))
 async def get_jobs_list(message: Message, scheduler: AsyncIOScheduler, logger: Logger) -> None:
     """Get list of monitoring jobs"""
-    logger.debug(f"User {message.from_user.id} requested jobs list")
+    text: str
+    cid: str = f"list:{message.from_user.id}"
     
-    uid = str(message.from_user.id)
-    jobs = scheduler.get_jobs()
-    
-    user_jobs = [job for job in jobs if job.id.startswith(f"{uid}_")]
-    
-    if not user_jobs:
-        await message.answer("Нет активных задач мониторинга")
-        return
-    
-    text = "Активный мониторинг\n\n"
-    for job in user_jobs:
-        crypto = job.id.split("_")[1]
-        trigger = str(job.trigger).replace('date', '')
-        text += f"{crypto}` — {trigger}\n"
-    
+    text = await get_cache_data(cid)
+
+    if text is None:
+        logger.debug(f"User {message.from_user.id} requested jobs list")
+
+        uid = str(message.from_user.id)
+        jobs = scheduler.get_jobs()
+
+        user_jobs = [job for job in jobs if job.id.startswith(f"{uid}_")]
+
+        if not user_jobs:
+            await message.answer("Нет активных задач мониторинга")
+            return
+
+        text_active_job: str = "Активные задачи\n"
+        text_paused_job: str = "Отложенные задачи\n"
+
+        for job in user_jobs:
+            crypto = job.id.split("_")[1]
+            trigger = str(job.trigger).replace('date', '')
+            
+            if job.next_run_time:
+                text_active_job += f"{crypto} | {trigger}\n"
+            else:
+                text_paused_job += f"{crypto} | {trigger}\n"
+
+        text = text_active_job + text_paused_job
+        try:
+            await set_cache_data(cid=cid, data=text, es=60*60)
+        except ValueError as e:
+            await message.answer(e)
+            return None
     await message.answer(text)
 
 @router.message(Command('help'))

@@ -80,6 +80,7 @@ bot = Bot(token=BOT_API)
 - .gitignore
 - LICENCE
 - config.py - конфиги
+- cache.py - кэширование
 - README.md
 
 ## Примечание

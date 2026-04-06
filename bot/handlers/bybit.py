@@ -7,11 +7,14 @@ from aiogram.types import Message
 from aiogram.filters import Command, CommandObject
 
 from bot.utils.bybit_manager import send_monitoring
+from cache import delete_cache
 from datetime import datetime
 
 router: Router = Router()
 @router.message(Command('resume'))
 async def resume_job(message: Message, scheduler: AsyncIOScheduler, command: CommandObject, logger: Logger) -> None:
+    await clean_lsit_cache(message.from_user.id)
+
     try:
         args: list[str] = command.args.split()
         jid: str = f"{message.from_user.id}_{args[0]}"
@@ -25,6 +28,8 @@ async def resume_job(message: Message, scheduler: AsyncIOScheduler, command: Com
 @router.message(Command('stop'))
 async def stop_job(message: Message, scheduler: AsyncIOScheduler, command: CommandObject, logger: Logger) -> None:
     """ pausing job """
+    await clean_lsit_cache(message.from_user.id)
+
     try:
         args: list[str] = command.args.split()
         jid: str = f"{message.from_user.id}_{args[0]}"
@@ -38,6 +43,8 @@ async def stop_job(message: Message, scheduler: AsyncIOScheduler, command: Comma
 @router.message(Command('remove'))
 async def remove_job(message: Message, scheduler: AsyncIOScheduler, command: CommandObject, logger: Logger) -> None:
     """ removing job """
+    await clean_lsit_cache(message.from_user.id)
+
     try:
         args: list[str] = command.args.split()
         jid: str = f"{message.from_user.id}_{args[0]}"
@@ -51,6 +58,8 @@ async def remove_job(message: Message, scheduler: AsyncIOScheduler, command: Com
 @router.message(Command("mono"))
 async def add_crypto(message: Message, conn: AsyncConnection, scheduler: AsyncIOScheduler, command: CommandObject, logger: Logger) -> None:
     """ adding crypto in monitoring list, monitoring type: interval"""
+    await clean_lsit_cache(message.from_user.id)
+
     try:
         args = command.args.split()
         if len(args) < 3:
@@ -79,6 +88,8 @@ async def add_crypto(message: Message, conn: AsyncConnection, scheduler: AsyncIO
 
 @router.message(Command('check'))
 async def check_crypto(message: Message, conn: AsyncConnection, scheduler: AsyncIOScheduler, command: CommandObject, logger: Logger) -> None:
+    await clean_lsit_cache(message.from_user.id)
+    
     try:
         args: list[str] = command.args.split()
         if len(args) < 3:
@@ -122,3 +133,7 @@ async def check_crypto(message: Message, conn: AsyncConnection, scheduler: Async
     except Exception as e:
         await message.answer('Что-то пошло не так, проверьте входные данные')
         logger.warning(f'error in adding cron\date monitoring: {e}')
+
+async def clean_lsit_cache(uid: int) -> None:
+    cid: str = f"list:{uid}"
+    await delete_cache(cid)
